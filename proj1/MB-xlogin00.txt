@@ -1,0 +1,91 @@
+#### Stručně ale věcně odpovězte na následující otázky: ######
+
+1. Zkompilujte ref verzi kódu. Byla hlavní výpočetní smyčka kompilátorem automaticky vektorizována? 
+Pokud ne, stručně popište proč a co vektorizaci brání.
+Pokud ano, jaká je efektivita vektorizace? (0.5b)
+=============================================================================
+
+
+2. Kolika GFLOPS a GINTOPS dosahuje smyčka ve funkci mandelbrot u ref verze kódu při 
+překladu s -O0 (žádné optimalizace) a -O3 (maximální optimalizace)? 
+Byly použity FMA instrukce? Jak jste k tomu přišli? Jaká instrukční sada (IS) byla použita? (1b)
+=============================================================================
+- O0:
+-- XX.X GFLOPS
+-- XX.X GINTOPS
+-- IS:
+-- FMA: ano/ne
+
+- O3:
+-- XX.X GFLOPS
+-- XX.X GINTOPS
+-- IS:
+-- FMA: ano/ne
+
+
+3. Přeložte ref vezi kódu s přepínačem -O0 (žádné optimalizace) a -O3 (maximální optimalizace). (2b)
+- Co se stalo s paměťovými přístupy u smyček? Popište číslem s jednotkou/procentuálně kolik je paměťových vs. výpočetních instrukcí 
+- Ukazuje se smyčka ve funkci mandelbrot v RoofLine modelu? Proč? (Nápověda: AI, Survey)
+==============================================================================
+- O0:
+-- mandelbrot:
+-- calculateMandelbrot:
+
+- O3:
+-- mandelbrot:
+-- calculateMandelbrot:
+
+Slovní vyjádření (1-2 krátké věty):
+
+
+4. Přeložte program s -O0 (žádné optimalizace). Na jakou výkonostní linii v RoofLine modelu 
+   cílíme s jednotlivými implementacemi? (1b)
+   Uveďte název a výkonnost včetně jednotky.
+==============================================================================
+- ref:
+- line:
+- batch:
+
+
+5. Jaká byla dosažena výkonnost v Intel Advisoru pro implementace ref, line a batch
+(v GFLOPS) při použití přepínačů -O0 a -O3? (1b)
+==============================================================================
+- ref:
+-- O0: XX.X GFLOPS
+-- O3: XX.X GFLOPS
+
+- line:
+-- O0: XX.X GFLOPS
+-- O3: XX.X GFLOPS
+
+- batch:
+-- O0: XX.X GFLOPS
+-- O3: XX.X GFLOPS
+
+
+6. Porovnejte implementaci referenčního rešení oproti "Line" a "Batch" implementaci. 
+Jakým způsobem jsou načítána data, proč, a jaký to má vliv na výkon. (1b)
+==============================================================================
+- line:
+- batch:
+
+
+7. Porovnejte Roofline všech modelů - Jaká je vaše aritmetická intenzita? 
+Dokázali byste ji přibližně spočítat i ručně a jak? (1b)
+============================================================================== 
+- ref AI: XX.X FLOP/Byte
+- line AI: XX.X FLOP/Byte
+-  batch AI: XX.X FLOP/Byte
+
+Přibližný výpočet:
+
+
+8. Komentujte vliv velikosti cache na výkonnost a chování na větších 
+velikostech domény. (1b)
+==============================================================================
+
+
+9. Jaký vliv na výkonnost má symetrie? Lze tento rozdíl pozorovat v Intel Advisor? 
+(nápověda: instrukce) (0.5b)
+============================================================================== 
+
