@@ -14,61 +14,67 @@
 
 #include "LineMandelCalculator.h"
 
+#define ALIGNMENT 32
+
 
 LineMandelCalculator::LineMandelCalculator (unsigned matrixBaseSize, unsigned limit) :
     BaseMandelCalculator(matrixBaseSize, limit, "LineMandelCalculator")
 {
-    data = (int *)(malloc(height * width * sizeof(int)));
+    data = (int *)(aligned_alloc(ALIGNMENT, height * width * sizeof(int)));
+    temp = (float *)(aligned_alloc(ALIGNMENT, 2 * width * sizeof(float)));
 }
 
 LineMandelCalculator::~LineMandelCalculator() {
     free(data);
+    free(temp);
     data = NULL;
+    temp = NULL;
 }
-
-template <typename T>
-static inline int mandelbrot(T real, T imag, int limit)
-{
-    T zReal = real;
-    T zImag = imag;
-
-    for (int i = 0; i < limit; ++i)
-    {
-        T r2 = zReal * zReal;
-        T i2 = zImag * zImag;
-
-        if (r2 + i2 > 4.0f)
-            return i;
-
-        zImag = 2.0f * zReal * zImag + imag;
-        zReal = r2 - i2 + real;
-    }
-    return limit;
-}
-
 
 int * LineMandelCalculator::calculateMandelbrot () {
     int *pdata = data;
+    float *ptemp = temp;
     float ii = 0.0f;
 
     for (int i = 0; i < height / 2; i++, ii++)
     {
-        float jj = 0.0f;
-        for (int j = 0; j < width; j++, jj++)
-        {
-            float x = x_start + jj * dx; // current real value
-            float y = y_start + ii * dy; // current imaginary value
+        float y = y_start + ii * dy;
+        int vals[width];
+        #pragma omp simd aligned(ptemp:ALIGNMENT)
+        for (int j = 0; j < width; j++) {
+            ptemp[j] = x_start + j * dx;
+            ptemp[j + width] = y;
+            vals[j] = 0;
+        }
 
-            int value = mandelbrot(x, y, limit);
+        for (int n = 0; n < limit; n++) {
+            #pragma omp simd aligned(ptemp:ALIGNMENT)
+            for (int j = 0; j < width; j++) {
+                float zReal = ptemp[j];
+                float zImag = ptemp[j + width];
 
-            *(pdata++) = value;
+                float r2 = zReal * zReal;
+                float i2 = zImag * zImag;
+
+                if (r2 + i2 < 4.0f){
+                    ptemp[j] = r2 - i2 + x_start + j * dx;
+                    ptemp[j + width] = 2.0f * zReal * zImag + y;
+                    vals[j]++;
+                }
+            }
+        }
+
+        #pragma omp simd aligned(pdata:ALIGNMENT)
+        for (int j = 0; j < width; j++) {
+            *(pdata++) = vals[j];
         }
     }
 
-    int line = height / 2;
-    while(line--) {
-        for (int line_pos = 0; line_pos < width; line_pos++)
-            *(pdata++) = *(data + line * width + line_pos);
+    int i = height / 2;
+    while(i--) {
+        #pragma omp simd aligned(data:ALIGNMENT) aligned(pdata:ALIGNMENT)
+        for (int j = 0; j < width; j++)
+            *(pdata++) = *(data + i * width + j);
     }
 
     return data;
