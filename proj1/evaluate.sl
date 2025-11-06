@@ -17,7 +17,7 @@ ml intel-compilers/2024.2.0 CMake/3.23.1-GCCcore-11.3.0  # pouze na Barbore
 cd build_evaluate
 rm tmp_*
 
-CC=icx CXX=icpx cmake ..
+CC=icx CXX=icpx cmake -DUSE_O3=OFF ..
 make
 
 

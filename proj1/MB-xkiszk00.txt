@@ -4,7 +4,8 @@
 Pokud ne, stručně popište proč a co vektorizaci brání.
 Pokud ano, jaká je efektivita vektorizace? (0.5b)
 =============================================================================
-
+Kód hlavní smyčky nebyl vektorizován. V tomto případě je hlavní smyčkou vnitřní smyčka přes j.
+Není vektorizována především kvůli variabilnímu počtu iterací ve smyčce volané ve funkci mandelbrot.
 
 2. Kolika GFLOPS a GINTOPS dosahuje smyčka ve funkci mandelbrot u ref verze kódu při 
 překladu s -O0 (žádné optimalizace) a -O3 (maximální optimalizace)? 
@@ -78,14 +79,45 @@ Dokázali byste ji přibližně spočítat i ručně a jak? (1b)
 -  batch AI: XX.X FLOP/Byte
 
 Přibližný výpočet:
+Výpočet předvedu na referenční implementaci uvnitř funkce mandelbrot:
+
+AI = počet FLOP / počet přenesených B z paměni
+
+FLOP:
+1x násobení pro r2
+1x násobení pro i2
+1x sčítání pro r2 + i2
+2x násobení a 1x sčítání pro update zImag
+2x sčítání pro update rReal
+---------------------------
+Celkem 4 násobení a 4 sčítání = 8 FLOP
+Dále je potřeba brát v potaz počet provedených smyček, které označíme jako K
+
+Načítání z paměni:
+Uprostřed jedné iterace smyčky se pracuje s následujícími operandy: zReal, zImag, real a imag
+Každý z nich je u nás typu float, tedy 4 B
+---------------------------
+Celkem 4 operandy x 4 B = 16 B
+
+AI = (8 FLOP * K) / (16 B) = 0.5 * K FLOPS/Byte
+Pro náš výpočet je K velmi variabilní pro různé body komplexní roviny, maximum je však limit=100 => 50 FLOPS/Byte.
+Pro celý obrázek bude AI váženým průměrem hodnot AI jednotlivých bodů.
 
 
 8. Komentujte vliv velikosti cache na výkonnost a chování na větších 
 velikostech domény. (1b)
 ==============================================================================
+Velikost cache má přímý vliv na počet cache miss při počítání větších domén. Pokud se data nevejdou do L1 cache,
+dochází k častějším přístupům do L2 a L3 či dokonce do RAM, což výrazně zpomaluje výpočet.
+U malých domén se řádek vejde do cache a výpočet je rychlý a omezený efektivitou výpočtu samotného algoritmu.
+U větších domén, kde se řádek do cache již nevejde, je vliv výpadků cache mnohem vyšší a výkon znatelně klesá.
 
 
 9. Jaký vliv na výkonnost má symetrie? Lze tento rozdíl pozorovat v Intel Advisor? 
 (nápověda: instrukce) (0.5b)
 ============================================================================== 
-
+Symetrie, pokud je využitá, zvyššuje rychlost výpočtu přibližně na polovinu, jelikož se počátá pouze jedna polovina
+a druhá je zrcadlově překopírována. Tím klesne přibližně na polovinu počet aritmetických operací (FLOPS).
+Kopírování je oproti výpočtu o mnoho rychlejší.
+V Intel Advisor je možné pozorovat rozdíl v nástroji Trip Counts, kde například u line implementace je počet iterací
+přes řádky snížen na polovinu.
