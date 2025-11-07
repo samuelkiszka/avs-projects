@@ -18,7 +18,8 @@ public:
 
 private:
     int *data;
-    float *temp;
+    float *tempr;
+    float *tempi;
 };
 
 #endif
