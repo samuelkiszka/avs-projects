@@ -7,21 +7,26 @@ Pokud ano, jaká je efektivita vektorizace? (0.5b)
 Kód hlavní smyčky nebyl vektorizován. V tomto případě je hlavní smyčkou vnitřní smyčka přes j.
 Není vektorizována především kvůli variabilnímu počtu iterací ve smyčce volané ve funkci mandelbrot.
 
+
+
 2. Kolika GFLOPS a GINTOPS dosahuje smyčka ve funkci mandelbrot u ref verze kódu při 
 překladu s -O0 (žádné optimalizace) a -O3 (maximální optimalizace)? 
 Byly použity FMA instrukce? Jak jste k tomu přišli? Jaká instrukční sada (IS) byla použita? (1b)
 =============================================================================
 - O0:
--- XX.X GFLOPS
--- XX.X GINTOPS
--- IS:
--- FMA: ano/ne
+-- 1.158 GFLOPS
+-- 0.292 GINTOPS
+-- IS: AVX, x86
+-- FMA: ne
 
 - O3:
--- XX.X GFLOPS
--- XX.X GINTOPS
--- IS:
--- FMA: ano/ne
+-- 3.175 GFLOPS
+-- 0.38 GINTOPS
+-- IS: AVX, FMA a x86
+-- FMA: ano
+
+Užití FMA instrukcí lze zjistit z analýzy vygenerovaného assembléru pro instukce na řádku 40 - výpočet zImag.
+
 
 
 3. Přeložte ref vezi kódu s přepínačem -O0 (žádné optimalizace) a -O3 (maximální optimalizace). (2b)
@@ -29,79 +34,92 @@ Byly použity FMA instrukce? Jak jste k tomu přišli? Jaká instrukční sada (
 - Ukazuje se smyčka ve funkci mandelbrot v RoofLine modelu? Proč? (Nápověda: AI, Survey)
 ==============================================================================
 - O0:
--- mandelbrot:
--- calculateMandelbrot:
+-- mandelbrot: 48% paměťové instrukce, 7% výpočetní instrukce, 29% mixované instrukce (16% ostatní) - AI 0.09
+-- calculateMandelbrot: 67% paměťové instrukce, 12% výpočetní instrukce, 9% mixované instrukce (12% ostatní) - AI 0.043
 
 - O3:
--- mandelbrot:
--- calculateMandelbrot:
+-- mandelbrot: žádné paměťové instrukce, 81% výpočetní instrukce (19% ostatní) - AI nelze vypočítat
+-- calculateMandelbrot: 42% paměťové instrukce, 14% výpočetní instrukce (44% ostatní) - AI 0.25
 
 Slovní vyjádření (1-2 krátké věty):
+Pro O0 ano, jelikož má nějaké paměťové operace a Roofline model je graf poměru výpočetních a paměťových operací.
+Pro O3 ne, jelikož nemá žádné paměťové operace - všechny operandy jsou v registrech CPU.
+
 
 
 4. Přeložte program s -O0 (žádné optimalizace). Na jakou výkonostní linii v RoofLine modelu 
    cílíme s jednotlivými implementacemi? (1b)
    Uveďte název a výkonnost včetně jednotky.
 ==============================================================================
-- ref:
-- line:
-- batch:
+- ref: DRAM Bandwidth: 1.39 GFLOPS
+- line: L2 Bandwidth: 14.78 GFLOPS
+- batch: L2 Bandwidth: 5.08 GFLOPS
+
 
 
 5. Jaká byla dosažena výkonnost v Intel Advisoru pro implementace ref, line a batch
 (v GFLOPS) při použití přepínačů -O0 a -O3? (1b)
 ==============================================================================
+Následující výsledky jsou pro celý program, jak se zobrazují v Intel Adisoru v modulu Summary.
 - ref:
--- O0: XX.X GFLOPS
--- O3: XX.X GFLOPS
+-- O0: 1.14 GFLOPS
+-- O3: 3.04 GFLOPS
 
 - line:
--- O0: XX.X GFLOPS
--- O3: XX.X GFLOPS
+-- O0: 11.34 GFLOPS
+-- O3: 36.4 GFLOPS
 
 - batch:
--- O0: XX.X GFLOPS
--- O3: XX.X GFLOPS
+-- O0: 2.76 GFLOPS
+-- O3: 14.86 GFLOPS
+
 
 
 6. Porovnejte implementaci referenčního rešení oproti "Line" a "Batch" implementaci. 
 Jakým způsobem jsou načítána data, proč, a jaký to má vliv na výkon. (1b)
 ==============================================================================
 - line:
+Data jsou načítána po řádcích a výkon je značně ovlivněn velikostí cache a délkou řádku.
+Když se řádek vejde do cache, je bude výkon velmi dobrý. V případě, že nikoli, tak budou časté výpadky paměti a výkon půjde dolů. Stále však méně než u ref implementace.
+Dále má vliv také zarovnání všech operandů, aby nedocházelo k rozdělení smyček na peale, compute a reminder části. To není u ref implementace ošetřeno.
 - batch:
+Data pro batch implementaci jsou načítána v dlaždicích. To má stejný efekt jako u line implementace, ale je zde menší závislost na velikosti řádku.
+Je zde velká závislost va velikosti dlaždice a na tom, zda se vejde do cache či nikoli.
+Ze stejného důvodu jako u line je zde třeba také zarovnání operandů.
+
 
 
 7. Porovnejte Roofline všech modelů - Jaká je vaše aritmetická intenzita? 
 Dokázali byste ji přibližně spočítat i ručně a jak? (1b)
-============================================================================== 
-- ref AI: XX.X FLOP/Byte
-- line AI: XX.X FLOP/Byte
--  batch AI: XX.X FLOP/Byte
+==============================================================================
+AI jsou uváděny pro funkci calculateMandelbrot -O0/-O3
+- ref AI: 0.043/0.25 FLOP/Byte
+- line AI: 0.028/0.523 FLOP/Byte
+- batch AI: 0.031/0.277 FLOP/Byte
 
 Přibližný výpočet:
-Výpočet předvedu na referenční implementaci uvnitř funkce mandelbrot:
+Vzorový výpočet předvedu na jedné iteraci smyčky ve funkci mandelbrot u referenčního řešení:
 
-AI = počet FLOP / počet přenesených B z paměni
+AI = počet FLOP / počet přístupů do paměti v B
 
 FLOP:
 1x násobení pro r2
 1x násobení pro i2
 1x sčítání pro r2 + i2
+1x porovnání pro podmínku
 2x násobení a 1x sčítání pro update zImag
 2x sčítání pro update rReal
 ---------------------------
-Celkem 4 násobení a 4 sčítání = 8 FLOP
-Dále je potřeba brát v potaz počet provedených smyček, které označíme jako K
+Celkem 4 násobení a 4 sčítání a jedno porovnání = 9 FLOP
 
-Načítání z paměni:
+Práce s pamění:
 Uprostřed jedné iterace smyčky se pracuje s následujícími operandy: zReal, zImag, real a imag
 Každý z nich je u nás typu float, tedy 4 B
 ---------------------------
 Celkem 4 operandy x 4 B = 16 B
 
-AI = (8 FLOP * K) / (16 B) = 0.5 * K FLOPS/Byte
-Pro náš výpočet je K velmi variabilní pro různé body komplexní roviny, maximum je však limit=100 => 50 FLOPS/Byte.
-Pro celý obrázek bude AI váženým průměrem hodnot AI jednotlivých bodů.
+AI = (9 FLOP) / (16 B) = 0.56  FLOPS/Byte
+
 
 
 8. Komentujte vliv velikosti cache na výkonnost a chování na větších 
@@ -109,8 +127,9 @@ velikostech domény. (1b)
 ==============================================================================
 Velikost cache má přímý vliv na počet cache miss při počítání větších domén. Pokud se data nevejdou do L1 cache,
 dochází k častějším přístupům do L2 a L3 či dokonce do RAM, což výrazně zpomaluje výpočet.
-U malých domén se řádek vejde do cache a výpočet je rychlý a omezený efektivitou výpočtu samotného algoritmu.
-U větších domén, kde se řádek do cache již nevejde, je vliv výpadků cache mnohem vyšší a výkon znatelně klesá.
+U malých domén se řádek vejde (dejme tomu pro line implementaci) do cache a výpočet je rychlý a omezený efektivitou výpočtu samotného algoritmu.
+U větších domén, kde se řádek (zase line implementace) do cache již nevejde, je vliv výpadků cache mnohem vyšší a výkon znatelně klesá.
+
 
 
 9. Jaký vliv na výkonnost má symetrie? Lze tento rozdíl pozorovat v Intel Advisor? 

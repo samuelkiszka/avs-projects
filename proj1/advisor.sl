@@ -5,7 +5,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
 #SBATCH --comment "use:vtune=2022.2.0"
-#SBATCH -t 0:25:00
+#SBATCH -t 0:10:00
 #SBATCH --mail-type END
 #SBATCH -J AVS-advisor
 #SBATCH --exclusive             # ensure full node access (avoid interference)
@@ -21,11 +21,11 @@ export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 export KMP_AFFINITY=compact,1,0
 
-[ -d build_advisor ] && rm -rf build_advisor
-[ -d build_advisor ] || mkdir build_advisor
-cd build_advisor
+[ -d build_advisor_opt ] && rm -rf build_advisor_opt
+[ -d build_advisor_opt ] || mkdir build_advisor_opt
+cd build_advisor_opt
 
-CC=icx CXX=icpx cmake -DUSE_O3=OFF ..
+CC=icx CXX=icpx cmake -DUSE_O3=ON ..
 make
 
 
