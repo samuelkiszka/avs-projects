@@ -1,0 +1,83 @@
+Architektury Výpočetních Systémů (AVS 2025)
+Projekt č. 2 (PMC)
+Login: xkiszk00
+
+Úloha 1: Paralelizace původního řešení
+===============================================================================
+1) Kterou smyčku jste ve výsledném řešení paralelizovali?
+
+   Jméno smyčky:
+   Důvod:
+   
+2) Jaký scheduling a chunksize je použitý ve výsledném řešení? 
+   Výsledky vašeho meření zapište do tabulky v souboru 1_2.txt. 
+   Tabulku můžete upravit/rozšířit.
+   Pokud nespecifikujete chunksize, uveďte výchozí hodnotu nebo způsob výpočtu.
+   
+   Scheduling:
+   Chunksize:
+      
+Úloha 2: Paralelní průchod stromem
+===============================================================================
+1) Jakou hodnotu cut-off jste zvolili? Testované hodnoty "cut-off" včetně velikosti 
+   problému a dosaženého času zapište do tabulky v souboru 2_1.txt.
+   Tabulku můžete upravit/rozšířit.
+
+   Cut-off:
+
+2) Jakým způsobem zajišťujete ukládání trojúhelníků z několika vláken současně 
+   v metodě LoopMeshBuilder::emitTriangle?
+
+
+Úloha 3: Grafy škálování všech řešení
+===============================================================================
+
+1) Stručně zhodnoťte efektivitu vytvořených řešení. Komentujte (1-2 věty), jak by 
+   mělo řešení ideálně vypadat a co podle vás způsobuje odchylky.
+
+   Slabé škálování:
+   Silné škálování:
+   Škálování podle velikosti mřížky:
+   
+
+2) Do souboru 3_4.txt napište svůj login, který používáte na Barboře, na druhý
+   řádek napište počet úloh (jobs), které jste spustili za dobu řešení projektu 2
+   a na třetí řádek uveďte, kolik času tyto úlohy běžely (formát HH:MM:SS). 
+   V souboru 3_4.txt využijte předpřipravené kostry - údaje přepište. Můžete využít
+   údajů ze Slurm plánovače, nepočítejte úlohy se suffixem (přepínač -X).
+
+
+Úloha 4: Analýza využití jader pomocí VTune
+================================================================================
+
+1) Jaké bylo průměrné využití jader pro všechny tři implementace s omezením na 
+   18 vláken? Hodnoty zapište do souboru 4_1.txt
+   (využijte předpřipravené kostry v souboru - čísla přepište).
+   
+   ref:
+   loop:
+   tree:
+
+2) Jaké bylo průměrné využití jader pro všechny tři implementace s využitím 
+   všech jader? Hodnoty zapište do souboru 4_2.txt (využijte předpřipravené 
+   kostry v souboru - čísla přepište).
+   
+   ref:
+   loop:
+   tree:   
+
+3) Vypočítejte efektivitu vašeho řešení loop a tree vůči ref pro 18 a 36 vláken. 
+   Hodnoty naměřte ručně na výpočetním uzlu, ne přes VTune. Použijte následující parametry:
+   
+   ./PMC --builder {ref, tree, loop} -t {18, 36} --grid 128 ../data/bun_zipper_res3.pts 
+   
+   Hodnoty zapište do souboru 4_3.txt 
+   (využijte předpřipravené kostry v souboru - čísla přepište):
+   "loop (18)" vs. "ref"
+   "tree (18)" vs. "ref"
+   "loop (36)" vs. "ref"
+   "tree (36)" vs. "ref"
+   
+4) Máte dvousoketový systém, každý socket má 18 jader, a program spouští 8 paralelních vláken.
+   Využijte OpenMP mechanismu pro nastaveni afinity pro namapování vláken na jádra rovnoměrně,
+   "na střídačku" mezi oba sokety, s rozestupem 2.
