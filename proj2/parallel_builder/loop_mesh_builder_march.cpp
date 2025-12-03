@@ -15,12 +15,10 @@
 
 #include "loop_mesh_builder.h"
 
-thread_local std::vector<LoopMeshBuilder::Triangle_t> *LoopMeshBuilder::thread_triangles = nullptr;
-
 LoopMeshBuilder::LoopMeshBuilder(unsigned gridEdgeSize)
-        : BaseMeshBuilder(gridEdgeSize, "OpenMP Loop")
+    : BaseMeshBuilder(gridEdgeSize, "OpenMP Loop")
 {
-
+    thread_local std::vector<LoopMeshBuilder::Triangle_t> *LoopMeshBuilder::thread_triangles = nullptr;
 }
 
 unsigned LoopMeshBuilder::marchCubes(const ParametricScalarField &field)
