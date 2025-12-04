@@ -5,7 +5,7 @@
  *
  * @brief   Parallel Marching Cubes implementation using OpenMP tasks + octree early elimination
  *
- * @date    1 December 2025
+ * @date    4 December 2025
  **/
 
 #include <iostream>
@@ -55,8 +55,6 @@ unsigned TreeMeshBuilder::marchCubes(const ParametricScalarField &field)
 void TreeMeshBuilder::processCube(const Vec3_t<float> &cubeOffset, unsigned size, const ParametricScalarField &field)
 {
     if (!intersectsIsosurface(cubeOffset, size, field)) {
-//        if (size > 1)
-//            std::cout << "Culled cube at (" << cubeOffset.x << ", " << cubeOffset.y << ", " << cubeOffset.z << ") of size " << size << std::endl;
         return;
     }
 
@@ -68,7 +66,7 @@ void TreeMeshBuilder::processCube(const Vec3_t<float> &cubeOffset, unsigned size
 
     const unsigned TASK_SIZE_THRESHOLD = 16;
 
-    unsigned half = size / 2;
+    unsigned half = size * 0.5f;
 
     for (unsigned x = 0; x <= 1; ++x) {
         for (unsigned y = 0; y <= 1; ++y) {
@@ -88,53 +86,46 @@ void TreeMeshBuilder::processCube(const Vec3_t<float> &cubeOffset, unsigned size
 
 bool TreeMeshBuilder::intersectsIsosurface(const Vec3_t<float> &cubeOffset, unsigned size, const ParametricScalarField &field)
 {
-//    const float gridRes = mGridResolution;
-//    const float minX = cubeOffset.x * gridRes;
-//    const float minY = cubeOffset.y * gridRes;
-//    const float minZ = cubeOffset.z * gridRes;
-//    const float maxX = (cubeOffset.x + float(size)) * gridRes;
-//    const float maxY = (cubeOffset.y + float(size)) * gridRes;
-//    const float maxZ = (cubeOffset.z + float(size)) * gridRes;
-//
-//    const float iso2 = TreeMeshBuilder::mIsoLevel * TreeMeshBuilder::mIsoLevel;
-//
-//    const auto &points = field.getPoints();
-//    float value = std::numeric_limits<float>::max();
-//
-//    for (unsigned i = 0; i < points.size(); ++i)
-//    {
-//        const Vec3_t<float> &p = points[i];
-//
-//        float dx = 0.0f;
-//        if (p.x < minX)         dx = minX - p.x;
-//        else if (p.x > maxX)    dx = p.x - maxX;
-//
-//        float dy = 0.0f;
-//        if (p.y < minY)         dy = minY - p.y;
-//        else if (p.y > maxY)    dy = p.y - maxY;
-//
-//        float dz = 0.0f;
-//        if (p.z < minZ)         dz = minZ - p.z;
-//        else if (p.z > maxZ)    dz = p.z - maxZ;
-//
-//        float distanceSquared = dx * dx + dy * dy + dz * dz;
-//
-//        if (distanceSquared < value){
-//            value = distanceSquared;
-//            if (distanceSquared <= iso2) {
-//                return true;
-//            }
-//        }
-//    }
-//    return value <= iso2;
+    const float gridRes = mGridResolution;
+    const float minX = cubeOffset.x * gridRes;
+    const float minY = cubeOffset.y * gridRes;
+    const float minZ = cubeOffset.z * gridRes;
+    const float maxX = (cubeOffset.x + float(size)) * gridRes;
+    const float maxY = (cubeOffset.y + float(size)) * gridRes;
+    const float maxZ = (cubeOffset.z + float(size)) * gridRes;
 
+    const float iso2 = BaseMeshBuilder::mIsoLevel * BaseMeshBuilder::mIsoLevel;
 
-    const auto midPoint = Vec3_t<float>( (cubeOffset.x + size / 2.0f) * mGridResolution,
-                                         (cubeOffset.y + size / 2.0f) * mGridResolution,
-                                         (cubeOffset.z + size / 2.0f) * mGridResolution);
-    const float value = evaluateFieldAt(midPoint, field);
-    const float sphereRadius = TreeMeshBuilder::mIsoLevel + sqrt(3.0f) * (size / 2.0f);
-    return value <= sphereRadius;
+    const auto &points = field.getPoints();
+    float value = std::numeric_limits<float>::max();
+
+    for (unsigned i = 0; i < points.size(); ++i)
+    {
+        const Vec3_t<float> &p = points[i];
+
+        float dx = 0.0f;
+        if (p.x < minX)         dx = minX - p.x;
+        else if (p.x > maxX)    dx = p.x - maxX;
+
+        float dy = 0.0f;
+        if (p.y < minY)         dy = minY - p.y;
+        else if (p.y > maxY)    dy = p.y - maxY;
+
+        float dz = 0.0f;
+        if (p.z < minZ)         dz = minZ - p.z;
+        else if (p.z > maxZ)    dz = p.z - maxZ;
+
+        float distanceSquared = dx * dx + dy * dy + dz * dz;
+
+        if (distanceSquared < value){
+            value = distanceSquared;
+            if (distanceSquared <= iso2) {
+                return true;
+            }
+        }
+    }
+
+    return value <= iso2;
 }
 
 float TreeMeshBuilder::evaluateFieldAt(const Vec3_t<float> &pos, const ParametricScalarField &field)
