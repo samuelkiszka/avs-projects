@@ -39,8 +39,9 @@ unsigned LoopMeshBuilder::marchCubes(const ParametricScalarField &field)
         // Assign the thread's triangle vector to the thread-local pointer
         thread_triangles = &threadTriangles[threadId];
 
+        const size_t chunkSize = 8;
         // Parallel for loop to process all cubes
-        #pragma omp for schedule(guided)
+        #pragma omp for schedule(guided, chunkSize)
         for (size_t i = 0; i < totalCubesCount; ++i) {
             Vec3_t<float> cubeOffset(i % mGridSize,
                                      (i / mGridSize) % mGridSize,

@@ -7,15 +7,22 @@ Login: xkiszk00
 1) Kterou smyčku jste ve výsledném řešení paralelizovali?
 
    Jméno smyčky:
+        marchCubes
    Důvod:
+        Smyčka v evaluateFieldAt má příliš málo práce, aby to bylo vzhledem k overheadu paralelizace efektivní.
+        Smyčka v marchCubes nám navíc povolí počítat trojúhelníky paralelně a ukládat je do samostatných bufferů pro každé vlákno,
+        které se pak spojí na konci výpočtu. V opačném případě by bylo nutné řešit synchronizaci přístupu k jednomu společnému bufferu.
    
 2) Jaký scheduling a chunksize je použitý ve výsledném řešení? 
    Výsledky vašeho meření zapište do tabulky v souboru 1_2.txt. 
    Tabulku můžete upravit/rozšířit.
    Pokud nespecifikujete chunksize, uveďte výchozí hodnotu nebo způsob výpočtu.
    
-   Scheduling:
-   Chunksize:
+   Scheduling: guided
+   Chunksize: 8
+
+   Statistiky naměřené v souboru 1_2.txt jsou pro 32 vláken, grid 64 a model bun_zipper_res3.pts.
+   Každá konfigurace byla měřena 4x a do tabulky je zapsán průměr.
       
 Úloha 2: Paralelní průchod stromem
 ===============================================================================
@@ -23,10 +30,19 @@ Login: xkiszk00
    problému a dosaženého času zapište do tabulky v souboru 2_1.txt.
    Tabulku můžete upravit/rozšířit.
 
-   Cut-off:
+   Cut-off: 8
+
+   Statistiky vyšly pro malé modely (3/4) mírně odlišně, ale v obou případech byl cut-off 8 druhou nejlepší volbou.
+
+   Statistiky naměřené v souboru 2_1.txt jsou pro 32 vláken, grid 65 a modely bun_zipper_res{1-4}.pts.
 
 2) Jakým způsobem zajišťujete ukládání trojúhelníků z několika vláken současně 
    v metodě LoopMeshBuilder::emitTriangle?
+
+   Na začátku podle počtu vláken alokuji pro každé vlákno samostatný buffer (std::vector).
+   Na ten si poté po vstpu do paralelní sekce uložím pro každé vlákno ukazatel pomocí
+   omp_get_thread_num(). V metodě emitTriangle pak přidáme trojúhelník do tohoto bufferu bez nutnosti synchronizace.
+   Po skončení paralelní sekce všechny buffery spojíme do jednoho výsledného.
 
 
 Úloha 3: Grafy škálování všech řešení
@@ -36,8 +52,14 @@ Login: xkiszk00
    mělo řešení ideálně vypadat a co podle vás způsobuje odchylky.
 
    Slabé škálování:
+        Ani jedna implementace nemá ideální podobu konstantního času při zvyšujícím se počtu vláken.
+        U octree má větší vliv režie spouštění tasků a nerovnoměrné rozdělení práce mezi vlákny.
    Silné škálování:
+        Loop škáluje mnohem lépe než tree, ale ani jedno se neblíží ideálnímu škálování s koeficientem 1/počet_vláken.
+        Hlavní příčinou špatného škálování u octree je vysoká režie tasků a nerovnoměrné rozdělení práce mezi vlákny.
    Škálování podle velikosti mřížky:
+        Obě implementace škálují téměř lineárně s velikostí mřížky, což odpovídá teoretické složitosti O(n^3).
+        U menších gridů je režie octree větší než gain ze zahazování nepotřebných částí prostoru, proto je nárůst času výpočtu strmější.
    
 
 2) Do souboru 3_4.txt napište svůj login, který používáte na Barboře, na druhý
@@ -66,7 +88,7 @@ Login: xkiszk00
    loop:
    tree:   
 
-3) Vypočítejte efektivitu vašeho řešení loop a tree vůči ref pro 18 a 36 vláken. 
+3) Vypočítejte efektivitu vašeho řešení loop a tree vůči ref pro 18 a 36 vláken.
    Hodnoty naměřte ručně na výpočetním uzlu, ne přes VTune. Použijte následující parametry:
    
    ./PMC --builder {ref, tree, loop} -t {18, 36} --grid 128 ../data/bun_zipper_res3.pts 
@@ -81,3 +103,12 @@ Login: xkiszk00
 4) Máte dvousoketový systém, každý socket má 18 jader, a program spouští 8 paralelních vláken.
    Využijte OpenMP mechanismu pro nastaveni afinity pro namapování vláken na jádra rovnoměrně,
    "na střídačku" mezi oba sokety, s rozestupem 2.
+
+   Můžeme použít buďto nastavení pomocí proměnných prostředí nebo přímo v kódu.
+   Proměnné prostředí:
+        export OMP_NUM_THREADS=8
+        export OMP_PLACES="{0,2, 18,20 4,6, 22,24}"
+        export OMP_PROC_BIND=TRUE
+   V kódu:
+        #pragma omp parallel num_threads(8) proc_bind(spread) \
+                bind_places({0,2, 18,20 4,6, 22,24})

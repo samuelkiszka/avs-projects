@@ -64,7 +64,7 @@ void TreeMeshBuilder::processCube(const Vec3_t<float> &cubeOffset, unsigned size
         return;
     }
 
-    const unsigned TASK_SIZE_THRESHOLD = 16;
+    const unsigned TASK_SIZE_THRESHOLD = 8;
 
     unsigned half = size * 0.5f;
 
